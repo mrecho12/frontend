@@ -15,7 +15,7 @@ import { EditReceiptModal } from './EditReceiptModal';
 
 export const ReceiptsPage: React.FC = () => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canApprove, hasPermission } = usePermissions();
+  const { canCreate, canUpdate, canApprove } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
@@ -54,7 +54,7 @@ export const ReceiptsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-secondary-900">{t('navigation.receipts')}</h1>
-        {(canCreate('receipts') || canCreate('RECEIPT') || hasPermission('RECEIPT', 'CREATE')) && (
+        {canCreate('receipts') && (
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
             {t('receipt.createReceipt')}

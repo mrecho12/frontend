@@ -3,8 +3,16 @@ import { useAuthStore } from '@/store/authStore';
 export const usePermissions = () => {
   const { user } = useAuthStore();
 
+  // Check if user is Super Admin
+  const isSuperAdmin = () => {
+    return user?.roles?.some(role => role.roleName === 'SUPER_ADMIN') || false;
+  };
+
   const hasPermission = (resource: string, action: string): boolean => {
     if (!user) return false;
+
+    // Super Admin has all permissions
+    if (isSuperAdmin()) return true;
 
     // Check role-based permissions (original logic)
     if (user.roles?.some(role =>
@@ -21,11 +29,11 @@ export const usePermissions = () => {
     return false;
   };
 
-  const canView = (resource: string) => hasPermission(resource, 'read');
-  const canCreate = (resource: string) => hasPermission(resource, 'create');
-  const canUpdate = (resource: string) => hasPermission(resource, 'update');
-  const canDelete = (resource: string) => hasPermission(resource, 'delete');
-  const canApprove = (resource: string) => hasPermission(resource, 'approve');
+  const canView = (resource: string) => isSuperAdmin() || hasPermission(resource, 'read');
+  const canCreate = (resource: string) => isSuperAdmin() || hasPermission(resource, 'create');
+  const canUpdate = (resource: string) => isSuperAdmin() || hasPermission(resource, 'update');
+  const canDelete = (resource: string) => isSuperAdmin() || hasPermission(resource, 'delete');
+  const canApprove = (resource: string) => isSuperAdmin() || hasPermission(resource, 'approve');
 
   return {
     hasPermission,
@@ -34,5 +42,6 @@ export const usePermissions = () => {
     canUpdate,
     canDelete,
     canApprove,
+    isSuperAdmin,
   };
 };
