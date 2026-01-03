@@ -102,37 +102,45 @@ export const ReceiptsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary-200">
-              {receipts?.DDMS_data?.receipts?.map((receipt: Receipt) => (
-                <tr key={receipt.id} className="hover:bg-secondary-50">
-                  <td className="table-cell font-medium">{receipt.receiptNumber}</td>
-                  <td className="table-cell">{new Date(receipt.date).toLocaleDateString()}</td>
-                  <td className="table-cell">{receipt.customerName}</td>
-                  <td className="table-cell">₹{receipt.totalAmount.toLocaleString()}</td>
-                  <td className="table-cell">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(receipt.status)}`}>
-                      {t(`receipt.${receipt.status.toLowerCase()}`)}
-                    </span>
-                  </td>
-                  <td className="table-cell">{receipt.paymentMode ? t(`receipt.${receipt.paymentMode.toLowerCase()}`) : '-'}</td>
-                  <td className="table-cell">
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedReceipt(receipt)}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {canUpdate('receipts') && (
-                        <Button variant="ghost" size="sm" onClick={() => setEditingReceipt(receipt)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {canApprove('receipts') && receipt.approvalRequired && !receipt.approvedBy && (
-                        <Button variant="ghost" size="sm">
-                          <Check className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
+              {receipts?.DDMS_data?.receipts?.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="table-cell text-center py-8 text-secondary-500">
+                    {t('receipt.noReceipts')}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                receipts?.DDMS_data?.receipts?.map((receipt: Receipt) => (
+                  <tr key={receipt.id} className="hover:bg-secondary-50">
+                    <td className="table-cell font-medium">{receipt.receiptNumber}</td>
+                    <td className="table-cell">{new Date(receipt.date).toLocaleDateString()}</td>
+                    <td className="table-cell">{receipt.customerName}</td>
+                    <td className="table-cell">₹{receipt.totalAmount.toLocaleString()}</td>
+                    <td className="table-cell">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(receipt.status)}`}>
+                        {t(`receipt.${receipt.status.toLowerCase()}`)}
+                      </span>
+                    </td>
+                    <td className="table-cell">{receipt.paymentMode ? t(`receipt.${receipt.paymentMode.toLowerCase()}`) : '-'}</td>
+                    <td className="table-cell">
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedReceipt(receipt)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {canUpdate('receipts') && (
+                          <Button variant="ghost" size="sm" onClick={() => setEditingReceipt(receipt)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canApprove('receipts') && receipt.approvalRequired && !receipt.approvedBy && (
+                          <Button variant="ghost" size="sm">
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
