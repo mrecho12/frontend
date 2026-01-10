@@ -35,12 +35,12 @@ export const CreateReceiptModal: React.FC<CreateReceiptModalProps> = ({ isOpen, 
 
   const { data: customers } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => apiService.get('/customers'),
+    queryFn: () => apiService.getCustomers(),
   });
 
   const { data: particularsList } = useQuery({
     queryKey: ['particulars', 'RECEIPT'],
-    queryFn: () => apiService.get('/particulars?type=RECEIPT'),
+    queryFn: () => apiService.getParticulars('RECEIPT'),
   });
 
   const createMutation = useMutation({
@@ -122,7 +122,7 @@ export const CreateReceiptModal: React.FC<CreateReceiptModalProps> = ({ isOpen, 
             required
           >
             <option value="">Select Customer</option>
-            {customers?.DDMS_data?.customers?.map((customer: any) => (
+            {customers?.DDMS_data?.map((customer: any) => (
               <option key={customer.id} value={customer.id}>
                 {customer.name} ({customer.accountNumber})
               </option>

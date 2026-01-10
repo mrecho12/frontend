@@ -38,6 +38,11 @@ export const ChallansPage: React.FC = () => {
     queryFn: () => apiService.getSuppliers(),
   });
 
+  const { data: particulars } = useQuery({
+    queryKey: ['particulars', 'CHALLAN'],
+    queryFn: () => apiService.getParticulars('CHALLAN'),
+  });
+
   const approveMutation = useMutation({
     mutationFn: (id: string) => apiService.approveChallan(id),
     onSuccess: () => {
@@ -169,7 +174,7 @@ export const ChallansPage: React.FC = () => {
         <div className="space-y-4">
           <Select label="Supplier *">
             <option value="">Select Supplier</option>
-            {suppliers?.DDMS_data?.suppliers?.map((supplier: any) => (
+            {suppliers?.DDMS_data?.map((supplier: any) => (
               <option key={supplier.id} value={supplier.id}>{supplier.companyName}</option>
             ))}
           </Select>
@@ -180,6 +185,25 @@ export const ChallansPage: React.FC = () => {
             <option value="CHEQUE">Cheque</option>
             <option value="ONLINE">Online</option>
           </Select>
+          
+          <div className="border-t pt-4">
+            <h3 className="font-semibold mb-3">Particulars</h3>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Select label="Item" className="flex-1">
+                  <option value="">Select Item</option>
+                  {particulars?.DDMS_data?.particulars?.map((particular: any) => (
+                    <option key={particular.id} value={particular.id}>{particular.name}</option>
+                  ))}
+                </Select>
+                <Input label="Amount" type="number" className="w-32" />
+                <Button type="button" size="sm" className="mt-6">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          
           <Input label="Notes" />
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setShowCreateModal(false)}>
