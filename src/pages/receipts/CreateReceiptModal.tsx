@@ -44,7 +44,7 @@ export const CreateReceiptModal: React.FC<CreateReceiptModalProps> = ({ isOpen, 
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiService.post('/receipts', data),
+    mutationFn: (data: any) => apiService.createReceipt(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receipts'] });
       toast.success('Receipt created successfully');

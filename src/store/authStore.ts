@@ -9,6 +9,11 @@ interface AuthState {
   currentStore: Store | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  // Session Management
+  isSessionWarningVisible: boolean;
+  remainingTime: number;
+  lastActivityTime: number;
+  isSessionActive: boolean;
 }
 
 interface AuthActions {
@@ -17,6 +22,13 @@ interface AuthActions {
   logout: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   updateUser: (user: Partial<AuthUser>) => void;
+  // Session Management
+  setSessionWarningVisible: (visible: boolean) => void;
+  setRemainingTime: (time: number) => void;
+  setLastActivityTime: (time: number) => void;
+  setSessionActive: (active: boolean) => void;
+  resetSession: () => void;
+  extendSession: () => void;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -28,6 +40,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       currentStore: null,
       isAuthenticated: false,
       isLoading: false,
+      // Session Management
+      isSessionWarningVisible: false,
+      remainingTime: 0,
+      lastActivityTime: Date.now(),
+      isSessionActive: false,
 
       setAuth: (user, token, refreshToken) => {
         set({
@@ -36,6 +53,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           refreshToken,
           isAuthenticated: true,
           currentStore: user.stores?.[0] || null,
+          // Reset session state on login
+          isSessionWarningVisible: false,
+          remainingTime: 0,
+          lastActivityTime: Date.now(),
+          isSessionActive: true,
         });
       },
 
@@ -77,6 +99,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             refreshToken: null,
             currentStore: null,
             isAuthenticated: false,
+            // Reset session state on logout
+            isSessionWarningVisible: false,
+            remainingTime: 0,
+            lastActivityTime: Date.now(),
+            isSessionActive: false,
           });
         }
       },
@@ -90,6 +117,40 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         if (user) {
           set({ user: { ...user, ...userData } });
         }
+      },
+
+      // Session Management Actions
+      setSessionWarningVisible: (visible) => {
+        set({ isSessionWarningVisible: visible });
+      },
+
+      setRemainingTime: (time) => {
+        set({ remainingTime: time });
+      },
+
+      setLastActivityTime: (time) => {
+        set({ lastActivityTime: time });
+      },
+
+      setSessionActive: (active) => {
+        set({ isSessionActive: active });
+      },
+
+      resetSession: () => {
+        set({
+          isSessionWarningVisible: false,
+          remainingTime: 15 * 60 * 1000, // 15 minutes
+          lastActivityTime: Date.now(),
+          isSessionActive: true,
+        });
+      },
+
+      extendSession: () => {
+        set({
+          isSessionWarningVisible: false,
+          lastActivityTime: Date.now(),
+          isSessionActive: true,
+        });
       },
     }),
     {

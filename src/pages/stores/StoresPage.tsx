@@ -139,10 +139,11 @@ export const StoresPage: React.FC = () => {
       onlinePaymentEnabled: store.onlinePaymentEnabled,
       subscriptionStatus: store.subscriptionStatus,
       subscriptionExpiresAt: store.subscriptionExpiresAt,
-      adminName: '',
-      adminMobile: '',
-      adminEmail: '',
-      adminPassword: '',
+      // Populate admin details from API response
+      adminName: store.admin?.name || '',
+      adminMobile: store.admin?.mobile || '',
+      adminEmail: store.admin?.email || '',
+      adminPassword: '', // Don't pre-fill password for security
     });
     setShowModal(true);
   };
@@ -362,11 +363,12 @@ export const StoresPage: React.FC = () => {
                 required
               />
               <Input
-                label="Admin Password *"
+                label={editingStore ? "Admin Password (leave blank to keep current)" : "Admin Password *"}
                 type="password"
                 value={formData.adminPassword}
                 onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
-                required
+                required={!editingStore}
+                placeholder={editingStore ? "Enter new password to change" : ""}
               />
             </div>
           </div>

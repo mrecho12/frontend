@@ -19,6 +19,8 @@ import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
 import { NewsPage } from '@/pages/news/NewsPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { useAuthStore } from '@/store/authStore';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { SessionTimeoutModal } from '@/components/session/SessionTimeoutModal';
 import '@/i18n';
 
 const queryClient = new QueryClient({
@@ -40,45 +42,84 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
+// Session Manager Component
+const SessionManager: React.FC = () => {
+  const { isAuthenticated, isSessionWarningVisible, remainingTime, logout, extendSession } = useAuthStore();
+  
+  // Initialize session timeout hook
+  useSessionTimeout({
+    enabled: isAuthenticated,
+    timeoutDuration: 15 * 60 * 1000, // 15 minutes
+    warningDuration: 2 * 60 * 1000, // 2 minutes before timeout
+    countdownInterval: 1000,
+    onSessionExpired: () => {
+      logout();
+      window.location.href = '/login';
+    },
+  });
+
+  return (
+    <>
+      {isSessionWarningVisible && (
+        <SessionTimeoutModal
+          remainingTime={remainingTime}
+          onExtend={() => extendSession()}
+          onLogout={() => logout()}
+        />
+      )}
+    </>
+  );
+};
+
+// Main App Routes
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="stores" element={<StoresPage />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="roles" element={<RolesPage />} />
+        <Route path="customers" element={<CustomersPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
+        <Route path="particulars" element={<ParticularsPage />} />
+        <Route path="receipts" element={<ReceiptsPage />} />
+        <Route path="challans" element={<ChallansPage />} />
+        <Route path="transactions" element={<TransactionsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="news" element={<NewsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+    </Routes>
+  );
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="App">
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="stores" element={<StoresPage />} />
-              <Route path="users" element={<UsersPage />} />
-              <Route path="roles" element={<RolesPage />} />
-              <Route path="customers" element={<CustomersPage />} />
-              <Route path="suppliers" element={<SuppliersPage />} />
-              <Route path="particulars" element={<ParticularsPage />} />
-              <Route path="receipts" element={<ReceiptsPage />} />
-              <Route path="challans" element={<ChallansPage />} />
-              <Route path="transactions" element={<TransactionsPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="news" element={<NewsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-          </Routes>
+          <SessionManager />
+          <AppRoutes />
           <Toaster
             position="top-right"
             toastOptions={{

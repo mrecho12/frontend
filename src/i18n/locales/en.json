@@ -138,5 +138,14 @@
     "passwordMismatch": "Passwords do not match",
     "minLength": "Minimum {{count}} characters required",
     "maxLength": "Maximum {{count}} characters allowed"
+  },
+  "session": {
+    "timeoutWarning": "Session Timeout",
+    "inactiveWarning": "Your session is about to expire due to inactivity",
+    "autoLogoutMessage": "You will be automatically logged out when the timer reaches zero.",
+    "logoutNow": "Logout Now",
+    "stayLoggedIn": "Stay Logged In",
+    "sessionExtended": "Session extended successfully",
+    "sessionExpired": "Your session has expired. Please login again."
   }
 }

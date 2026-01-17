@@ -279,3 +279,27 @@ export interface ChallanFormData {
   }[];
   paymentMode: 'CASH' | 'CHEQUE' | 'ONLINE';
 }
+
+// Session Management
+export interface SessionState {
+  isSessionWarningVisible: boolean;
+  remainingTime: number;
+  lastActivityTime: number;
+  isSessionActive: boolean;
+}
+
+export interface SessionConfig {
+  timeoutDuration: number; // in milliseconds, default 15 minutes (900000ms)
+  warningDuration: number; // in milliseconds, default 2 minutes (120000ms)
+  warningCountdownInterval: number; // in milliseconds, default 1 second (1000ms)
+}
+
+export interface SessionActions {
+  resetSession: () => void;
+  showSessionWarning: () => void;
+  hideSessionWarning: () => void;
+  setRemainingTime: (time: number) => void;
+  startSessionWarningCountdown: () => void;
+  logout: () => Promise<void>;
+  extendSession: () => void;
+}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Filter, Download, Eye, Edit, Check } from 'lucide-react';
+import { Plus, Search, Filter, Download, Eye, Edit, Check, Trash2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -27,6 +27,14 @@ export const ChallansPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedChallan, setSelectedChallan] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    supplierId: '',
+    date: new Date().toISOString().split('T')[0],
+    referenceNumber: '',
+    paymentMode: 'CASH',
+    notes: '',
+  });
+  const [challanParticulars, setChallanParticulars] = useState<Array<{particularId: number, amount: number}>>([]);
 
   const { data: challans, isLoading } = useQuery({
     queryKey: ['challans', searchTerm],
@@ -51,6 +59,32 @@ export const ChallansPage: React.FC = () => {
     },
     onError: () => toast.error('Failed to approve challan'),
   });
+
+  const addParticular = () => {
+    setChallanParticulars([...challanParticulars, { particularId: 0, amount: 0 }]);
+  };
+
+  const removeParticular = (index: number) => {
+    setChallanParticulars(challanParticulars.filter((_, i) => i !== index));
+  };
+
+  const updateParticular = (index: number, field: 'particularId' | 'amount', value: number) => {
+    const updated = [...challanParticulars];
+    updated[index] = { ...updated[index], [field]: value };
+    setChallanParticulars(updated);
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setFormData({
+      supplierId: '',
+      date: new Date().toISOString().split('T')[0],
+      referenceNumber: '',
+      paymentMode: 'CASH',
+      notes: '',
+    });
+    setChallanParticulars([]);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -167,49 +201,95 @@ export const ChallansPage: React.FC = () => {
       {/* Create Challan Modal */}
       <Modal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={handleCloseModal}
         title="Create Challan"
         size="lg"
       >
         <div className="space-y-4">
-          <Select label="Supplier *">
+          <Select 
+            label="Supplier *"
+            value={formData.supplierId}
+            onChange={(e) => setFormData({...formData, supplierId: e.target.value})}
+          >
             <option value="">Select Supplier</option>
             {suppliers?.DDMS_data?.map((supplier: any) => (
               <option key={supplier.id} value={supplier.id}>{supplier.companyName}</option>
             ))}
           </Select>
-          <Input label="Date *" type="date" />
-          <Input label="Reference Number" />
-          <Select label="Payment Mode *">
+          <Input 
+            label="Date *" 
+            type="date" 
+            value={formData.date}
+            onChange={(e) => setFormData({...formData, date: e.target.value})}
+          />
+          <Input 
+            label="Reference Number" 
+            value={formData.referenceNumber}
+            onChange={(e) => setFormData({...formData, referenceNumber: e.target.value})}
+          />
+          <Select 
+            label="Payment Mode *"
+            value={formData.paymentMode}
+            onChange={(e) => setFormData({...formData, paymentMode: e.target.value})}
+          >
             <option value="CASH">Cash</option>
             <option value="CHEQUE">Cheque</option>
             <option value="ONLINE">Online</option>
           </Select>
           
           <div className="border-t pt-4">
-            <h3 className="font-semibold mb-3">Particulars</h3>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold">Particulars</h3>
+              <Button type="button" size="sm" onClick={addParticular}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add Item
+              </Button>
+            </div>
             <div className="space-y-2">
-              <div className="flex gap-2">
-                <Select label="Item" className="flex-1">
-                  <option value="">Select Item</option>
-                  {particulars?.DDMS_data?.particulars?.map((particular: any) => (
-                    <option key={particular.id} value={particular.id}>{particular.name}</option>
-                  ))}
-                </Select>
-                <Input label="Amount" type="number" className="w-32" />
-                <Button type="button" size="sm" className="mt-6">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
+              {challanParticulars.map((particular, index) => (
+                <div key={index} className="flex gap-2 items-end">
+                  <Select 
+                    label={index === 0 ? 'Item' : ''}
+                    value={particular.particularId}
+                    onChange={(e) => updateParticular(index, 'particularId', Number(e.target.value))}
+                    className="flex-1"
+                  >
+                    <option value="">Select Item</option>
+                    {particulars?.DDMS_data?.particulars?.map((p: any) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </Select>
+                  <Input 
+                    label={index === 0 ? 'Amount' : ''}
+                    type="number" 
+                    value={particular.amount || ''}
+                    onChange={(e) => updateParticular(index, 'amount', Number(e.target.value))}
+                    className="w-32" 
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeParticular(index)}
+                    className="mb-1"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
             </div>
           </div>
           
-          <Input label="Notes" />
+          <Input 
+            label="Notes" 
+            value={formData.notes}
+            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+          />
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+            <Button variant="outline" onClick={handleCloseModal}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={() => setShowCreateModal(false)}>
+            <Button onClick={handleCloseModal}>
               {t('common.save')}
             </Button>
           </div>
