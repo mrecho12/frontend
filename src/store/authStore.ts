@@ -93,6 +93,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         } catch (error) {
           console.error('Logout API call failed:', error);
         } finally {
+          // Clear all state
           set({
             user: null,
             token: null,
@@ -105,6 +106,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             lastActivityTime: Date.now(),
             isSessionActive: false,
           });
+          // Force clear localStorage to prevent stale auth state
+          localStorage.removeItem('auth-storage');
         }
       },
 

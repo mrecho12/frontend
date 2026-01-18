@@ -8,7 +8,7 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: import.meta.env.VITE_API_BASE_URL || 'https://backend-production-a53c.up.railway.app/auth/login',
+      baseURL: import.meta.env.VITE_API_BASE_URL || 'https://backend-production-a53c.up.railway.app',
       headers: {
       'Content-Type': 'application/json'
     }
@@ -53,8 +53,8 @@ class ApiService {
 
         // Handle authentication status
         if (DDMS_login_status === 'unauthenticated' || DDMS_login_status === 'expired') {
+          // Call logout action to properly clear state through persist middleware
           useAuthStore.getState().logout();
-          window.location.href = '/login';
           return Promise.reject(new Error('Authentication required'));
         }
 
@@ -69,8 +69,8 @@ class ApiService {
       async (error) => {
         // Prevent infinite refresh loops
         if (error.config?.url?.includes('/auth/refresh')) {
+          // Call logout action to properly clear state through persist middleware
           useAuthStore.getState().logout();
-          window.location.href = '/login';
           return Promise.reject(error);
         }
 
@@ -93,13 +93,14 @@ class ApiService {
               error.config.headers.Authorization = `Bearer ${newToken}`;
               return this.api.request(error.config);
             } catch (refreshError) {
-              // Only logout if refresh fails, not on initial 401
-              console.error('Token refresh failed:', refreshError);
-             
+              // Clear auth state when refresh fails
+              useAuthStore.getState().logout();
               return Promise.reject(refreshError);
             }
+          } else {
+            // No refresh token - clear auth
+            useAuthStore.getState().logout();
           }
-          // Don't auto-logout if no refresh token, just reject the error
         }
 
         return Promise.reject(error);
