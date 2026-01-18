@@ -41,15 +41,15 @@ class ApiService {
     // Response interceptor
     this.api.interceptors.response.use(
       (response: AxiosResponse<DDMSResponse>) => {
-        // Don't process responses for public endpoints
-        const publicEndpoints = ['/auth/send-otp', '/auth/login', '/auth/refresh', '/auth/logout'];
-        const isPublicEndpoint = publicEndpoints.some(endpoint => response.config.url?.includes(endpoint));
+        const { DDMS_status, DDMS_login_status, DDMS_error_code } = response.data;
+
+        // Don't process authentication responses for public endpoints
+        const authEndpoints = ['/auth/send-otp', '/auth/login', '/auth/refresh', '/auth/logout'];
+        const isAuthEndpoint = authEndpoints.some(endpoint => response.config.url?.includes(endpoint));
         
-        if (isPublicEndpoint) {
+        if (isAuthEndpoint) {
           return response;
         }
-
-        const { DDMS_status, DDMS_login_status, DDMS_error_code } = response.data;
 
         // Handle authentication status
         if (DDMS_login_status === 'unauthenticated' || DDMS_login_status === 'expired') {
