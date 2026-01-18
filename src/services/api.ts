@@ -42,7 +42,7 @@ class ApiService {
     this.api.interceptors.response.use(
       (response: AxiosResponse<DDMSResponse>) => {
         // Don't process responses for public endpoints
-        const publicEndpoints = ['/auth/send-otp', '/auth/login', '/auth/refresh'];
+        const publicEndpoints = ['/auth/send-otp', '/auth/login', '/auth/refresh', '/auth/logout'];
         const isPublicEndpoint = publicEndpoints.some(endpoint => response.config.url?.includes(endpoint));
         
         if (isPublicEndpoint) {
