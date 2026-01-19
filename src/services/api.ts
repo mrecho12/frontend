@@ -47,12 +47,14 @@ class ApiService {
         const authEndpoints = ['/auth/send-otp', '/auth/login', '/auth/refresh', '/auth/logout'];
         const isAuthEndpoint = authEndpoints.some(endpoint => response.config.url?.includes(endpoint));
 
+        // For auth endpoints, just return the response
         if (isAuthEndpoint) {
           return response;
         }
 
-        // Handle authentication status
-        if (DDMS_login_status === 'unauthenticated' || DDMS_login_status === 'expired') {
+        // Handle authentication status - but only for success responses (not 401)
+        // 401 errors are handled in the error handler below
+        if (response.status !== 401 && (DDMS_login_status === 'unauthenticated' || DDMS_login_status === 'expired')) {
           // Call logout action to properly clear state through persist middleware
           useAuthStore.getState().logout();
           return Promise.reject(new Error('Authentication required'));
@@ -67,16 +69,14 @@ class ApiService {
         return response;
       },
       async (error) => {
-        // Prevent infinite refresh loops - check if this is already a retry
-        if (error.config?._retry) {
-          // Already retried once, logout and reject
+        // If it's a refresh request that failed
+        if (error.config?.url?.includes('/auth/refresh')) {
           useAuthStore.getState().logout();
-          return Promise.reject(error);
+          return Promise.reject(new Error('Session expired. Please login again.'));
         }
 
-        // Check if this is a refresh request that failed
-        if (error.config?.url?.includes('/auth/refresh')) {
-          // Refresh failed - clear auth and redirect to login
+        // If already retried, logout
+        if (error.config?._retry) {
           useAuthStore.getState().logout();
           return Promise.reject(new Error('Session expired. Please login again.'));
         }
@@ -86,39 +86,36 @@ class ApiService {
           const { refreshToken, isAuthenticated } = useAuthStore.getState();
 
           if (!isAuthenticated || !refreshToken) {
-            // No valid auth state - logout
             useAuthStore.getState().logout();
             return Promise.reject(new Error('Authentication required'));
           }
 
-          // Mark this request as a retry to prevent infinite loops
+          // Mark this request as a retry
           error.config._retry = true;
 
           try {
-            // Attempt to refresh the token
-            const response = await this.refreshAuthToken(refreshToken);
+            // Attempt to refresh the token using raw axios to bypass interceptors
+            const response = await axios.post<DDMSResponse>(
+              `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
+              { refreshToken },
+              { headers: { 'Content-Type': 'application/json' } }
+            );
 
-            // Check if refresh was successful
-            if (response.DDMS_status === 'success' && response.DDMS_data) {
-              const { token: newToken, refreshToken: newRefreshToken } = response.DDMS_data;
+            if (response.data.DDMS_status === 'success' && response.data.DDMS_data) {
+              const { token: newToken, refreshToken: newRefreshToken } = response.data.DDMS_data;
 
               // Update tokens in store
               const { user } = useAuthStore.getState();
               if (user && newToken) {
                 useAuthStore.getState().setAuth(user, newToken, newRefreshToken || refreshToken);
 
-                // Update the Authorization header with new token
-                error.config.headers.Authorization = `Bearer ${newToken}`;
-
                 // Retry the original request with new token
                 return this.api.request(error.config);
               }
             }
 
-            // Refresh response was not successful
             throw new Error('Token refresh failed');
           } catch (refreshError) {
-            // Refresh failed - clear auth state
             console.error('Token refresh failed:', refreshError);
             useAuthStore.getState().logout();
             return Promise.reject(new Error('Session expired. Please login again.'));
