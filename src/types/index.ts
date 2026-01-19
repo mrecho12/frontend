@@ -85,11 +85,14 @@ export interface Permission {
   children?: Permission[];
 }
 
+// UserRole - supports both login response format (roleName) and users API format (name)
 export interface UserRole {
-  roleId: string;
-  roleName: string;
+  roleId?: string;
+  id?: string;
+  roleName?: string;
+  name?: string;
   storeId: string;
-  storeName: string;
+  storeName?: string;
   permissions: Permission[];
 }
 

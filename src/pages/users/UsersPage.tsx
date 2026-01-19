@@ -101,7 +101,7 @@ export const UsersPage: React.FC = () => {
       mobile: user.mobile,
       email: user.email || '',
       address: user.address || '',
-      roleId: user.roles?.[0]?.roleId,
+      roleId: user.roles?.[0]?.id,
     });
     setShowModal(true);
   };
@@ -135,7 +135,7 @@ export const UsersPage: React.FC = () => {
 
   const handleManageRoles = (user: any) => {
     setSelectedUserId(user.id);
-    setUserRole(user.roles?.[0]?.roleId);
+    setUserRole(user.roles?.[0]?.id);
     setShowRoleModal(true);
   };
 
@@ -193,6 +193,7 @@ export const UsersPage: React.FC = () => {
                 <th className="table-header-cell">Name</th>
                 <th className="table-header-cell">Mobile</th>
                 <th className="table-header-cell">Email</th>
+                <th className="table-header-cell">Roles</th>
                 <th className="table-header-cell">Status</th>
                 <th className="table-header-cell">Last Login</th>
                 <th className="table-header-cell">{t('common.actions')}</th>
@@ -209,6 +210,18 @@ export const UsersPage: React.FC = () => {
                   </td>
                   <td className="table-cell">{user.mobile}</td>
                   <td className="table-cell">{user.email || '-'}</td>
+                  <td className="table-cell">
+                    <div className="flex flex-wrap gap-1">
+                      {user.roles?.map((role: any) => (
+                        <span
+                          key={role.id}
+                          className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full"
+                        >
+                          {role.name}
+                        </span>
+                      )) || '-'}
+                    </div>
+                  </td>
                   <td className="table-cell">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       user.active 

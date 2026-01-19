@@ -3,9 +3,12 @@ import { useAuthStore } from '@/store/authStore';
 export const usePermissions = () => {
   const { user } = useAuthStore();
 
-  // Check if user is Super Admin
+  // Check if user is Super Admin - handles both old format (roleName) and new format (name)
   const isSuperAdmin = () => {
-    return user?.roles?.some(role => role.roleName === 'SUPER_ADMIN') || false;
+    return user?.roles?.some(role => 
+      role.roleName === 'SUPER_ADMIN' || 
+      role.name === 'SUPER_ADMIN'
+    ) || false;
   };
 
   const hasPermission = (resource: string, action: string): boolean => {
@@ -14,7 +17,7 @@ export const usePermissions = () => {
     // Super Admin has all permissions
     if (isSuperAdmin()) return true;
 
-    // Check role-based permissions (original logic)
+    // Check role-based permissions (new format from users API)
     if (user.roles?.some(role =>
       role.permissions?.some(
         (perm: any) => perm.resource === resource && perm.action === action
