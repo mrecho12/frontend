@@ -46,7 +46,7 @@ class ApiService {
         // Don't process authentication responses for public endpoints
         const authEndpoints = ['/auth/send-otp', '/auth/login', '/auth/refresh', '/auth/logout'];
         const isAuthEndpoint = authEndpoints.some(endpoint => response.config.url?.includes(endpoint));
-        
+
         if (isAuthEndpoint) {
           return response;
         }
@@ -67,39 +67,61 @@ class ApiService {
         return response;
       },
       async (error) => {
-        // Prevent infinite refresh loops
-        if (error.config?.url?.includes('/auth/refresh')) {
-          // Call logout action to properly clear state through persist middleware
+        // Prevent infinite refresh loops - check if this is already a retry
+        if (error.config?._retry) {
+          // Already retried once, logout and reject
           useAuthStore.getState().logout();
           return Promise.reject(error);
         }
 
-        if (error.response?.status === 401 && !error.config?._retry) {
-          error.config._retry = true;
-          
-          const { refreshToken } = useAuthStore.getState();
-          if (refreshToken) {
-            try {
-              const response = await this.refreshAuthToken(refreshToken);
-              const { token: newToken, refreshToken: newRefreshToken } = response.DDMS_data;
-              
-              // Update tokens
-              const { user } = useAuthStore.getState();
-              if (user) {
-                useAuthStore.getState().setAuth(user, newToken, newRefreshToken);
-              }
+        // Check if this is a refresh request that failed
+        if (error.config?.url?.includes('/auth/refresh')) {
+          // Refresh failed - clear auth and redirect to login
+          useAuthStore.getState().logout();
+          return Promise.reject(new Error('Session expired. Please login again.'));
+        }
 
-              // Retry original request
-              error.config.headers.Authorization = `Bearer ${newToken}`;
-              return this.api.request(error.config);
-            } catch (refreshError) {
-              // Clear auth state when refresh fails
-              useAuthStore.getState().logout();
-              return Promise.reject(refreshError);
-            }
-          } else {
-            // No refresh token - clear auth
+        if (error.response?.status === 401) {
+          // Check if we have a refresh token
+          const { refreshToken, isAuthenticated } = useAuthStore.getState();
+
+          if (!isAuthenticated || !refreshToken) {
+            // No valid auth state - logout
             useAuthStore.getState().logout();
+            return Promise.reject(new Error('Authentication required'));
+          }
+
+          // Mark this request as a retry to prevent infinite loops
+          error.config._retry = true;
+
+          try {
+            // Attempt to refresh the token
+            const response = await this.refreshAuthToken(refreshToken);
+
+            // Check if refresh was successful
+            if (response.DDMS_status === 'success' && response.DDMS_data) {
+              const { token: newToken, refreshToken: newRefreshToken } = response.DDMS_data;
+
+              // Update tokens in store
+              const { user } = useAuthStore.getState();
+              if (user && newToken) {
+                useAuthStore.getState().setAuth(user, newToken, newRefreshToken || refreshToken);
+
+                // Update the Authorization header with new token
+                error.config.headers.Authorization = `Bearer ${newToken}`;
+
+                // Retry the original request with new token
+                return this.api.request(error.config);
+              }
+            }
+
+            // Refresh response was not successful
+            throw new Error('Token refresh failed');
+          } catch (refreshError) {
+            // Refresh failed - clear auth state
+            console.error('Token refresh failed:', refreshError);
+            useAuthStore.getState().logout();
+            return Promise.reject(new Error('Session expired. Please login again.'));
           }
         }
 
